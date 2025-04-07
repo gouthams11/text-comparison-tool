@@ -1,0 +1,228 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f5f5f5;
+    margin: 0;
+    padding: 20px;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+body.dark-mode {
+    background-color: #1e1e1e;
+    color: #e0e0e0;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+h1 {
+    margin: 0;
+}
+
+.instructions {
+    margin-bottom: 20px;
+}
+
+.instructions h2 {
+    display: flex;
+    justify-content: space-between;
+    cursor: pointer;
+}
+
+#instructions-content {
+    display: block;
+}
+
+#instructions-content.hidden {
+    display: none;
+}
+
+.input-section {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.input-group {
+    width: 48%;
+}
+
+textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    resize: vertical;
+    background-color: white;
+    transition: background-color 0.3s, border-color 0.3s;
+}
+
+body.dark-mode textarea {
+    background-color: #2d2d2d;
+    border-color: #555;
+    color: #e0e0e0;
+}
+
+.controls {
+    margin-top: 5px;
+    display: flex;
+    gap: 10px;
+}
+
+button {
+    padding: 8px 16px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+button:hover:not(:disabled) {
+    background-color: #0056b3;
+}
+
+button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+.clear-btn {
+    background-color: #dc3545;
+}
+
+.clear-btn:hover:not(:disabled) {
+    background-color: #b02a37;
+}
+
+.options {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.options label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+#compare-btn {
+    flex-grow: 1;
+}
+
+.diff-summary {
+    text-align: center;
+    margin-bottom: 20px;
+    font-weight: bold;
+}
+
+.diff-section {
+    display: flex;
+    gap: 10px;
+    height: 400px;
+}
+
+.pane {
+    width: 50%;
+    padding: 10px;
+    background-color: white;
+    border: 1px solid #ddd;
+    overflow-y: auto;
+    transition: background-color 0.3s, border-color 0.3s;
+}
+
+body.dark-mode .pane {
+    background-color: #2d2d2d;
+    border-color: #555;
+}
+
+.pane:focus {
+    outline: 2px solid #007bff;
+}
+
+.pane h2 {
+    margin: 0 0 10px;
+}
+
+.line {
+    white-space: pre-wrap;
+    padding: 2px 0;
+}
+
+.line.unchanged {
+    background-color: transparent;
+}
+
+.line.added {
+    background-color: #e6ffed;
+}
+
+.line.deleted {
+    background-color: #ffecec;
+}
+
+.line.changed {
+    background-color: #dbedff;
+}
+
+.line.empty {
+    background-color: #f5f5f5;
+    height: 1.2em;
+}
+
+body.dark-mode .line.empty {
+    background-color: #252525;
+}
+
+body.dark-mode .line.added {
+    background-color: #2a4b2a;
+}
+
+body.dark-mode .line.deleted {
+    background-color: #4b2a2a;
+}
+
+body.dark-mode .line.changed {
+    background-color: #2a3b4b;
+}
+
+span.diff.added {
+    background-color: #a6f3a6;
+    text-decoration: none;
+}
+
+span.diff.removed {
+    background-color: #f8cbcb;
+    text-decoration: line-through;
+}
+
+body.dark-mode span.diff.added {
+    background-color: #4caf50;
+}
+
+body.dark-mode span.diff.removed {
+    background-color: #f44336;
+}
+
+.line-number {
+    display: inline-block;
+    width: 40px;
+    text-align: right;
+    padding-right: 10px;
+    color: #999;
+    user-select: none;
+}
+
+.navigation {
+    margin-top: 20px;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+}

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text Comparison Tool</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1>Text Comparison Tool</h1>
+        <button id="dark-mode-toggle" aria-label="Toggle dark mode">Toggle Dark Mode</button>
+    </header>
+    <main>
+        <section class="instructions">
+            <h2>Instructions <button id="toggle-instructions" aria-label="Toggle instructions">▼</button></h2>
+            <div id="instructions-content">
+                <p>Paste or upload text into the fields below and click "Compare" to see differences. Use "Real-time Comparison" for instant updates. Navigate differences with the buttons provided.</p>
+            </div>
+        </section>
+        <div class="input-section">
+            <div class="input-group">
+                <label for="original">Original</label>
+                <textarea id="original" rows="10" aria-label="Original text input"></textarea>
+                <div class="controls">
+                    <button class="clear-btn" data-target="original">Clear</button>
+                    <input type="file" id="original-file" aria-label="Upload original file" />
+                </div>
+            </div>
+            <div class="input-group">
+                <label for="modified">Modified</label>
+                <textarea id="modified" rows="10" aria-label="Modified text input"></textarea>
+                <div class="controls">
+                    <button class="clear-btn" data-target="modified">Clear</button>
+                    <input type="file" id="modified-file" aria-label="Upload modified file" />
+                </div>
+            </div>
+        </div>
+        <div class="options">
+            <button id="compare-btn">Compare</button>
+            <label><input type="checkbox" id="realtime"> Real-time Comparison</label>
+            <label><input type="checkbox" id="ignore-whitespace"> Ignore Whitespace</label>
+            <label><input type="checkbox" id="ignore-case"> Ignore Case</label>
+        </div>
+        <div class="diff-summary" aria-live="polite"></div>
+        <div class="diff-section">
+            <div class="pane original" tabindex="0" aria-label="Original text differences">
+                <h2>Original</h2>
+                <div class="lines"></div>
+            </div>
+            <div class="pane modified" tabindex="0" aria-label="Modified text differences">
+                <h2>Modified</h2>
+                <div class="lines"></div>
+            </div>
+        </div>
+        <div class="navigation">
+            <button id="prev-diff" disabled>Previous Difference</button>
+            <button id="next-diff" disabled>Next Difference</button>
+        </div>
+    </main>
+    <script src="https://cdn.jsdelivr.net/npm/diff@5.1.0/dist/diff.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
