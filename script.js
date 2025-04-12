@@ -1,441 +1,337 @@
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', function() {
     // DOM Elements
+    const leftText = document.getElementById('leftText');
+    const rightText = document.getElementById('rightText');
+    const leftLineNumbers = document.getElementById('leftLineNumbers');
+    const rightLineNumbers = document.getElementById('rightLineNumbers');
+    const leftStats = document.getElementById('leftStats');
+    const rightStats = document.getElementById('rightStats');
     const compareBtn = document.getElementById('compareBtn');
     const clearBtn = document.getElementById('clearBtn');
-    const originalText = document.getElementById('originalText');
-    const modifiedText = document.getElementById('modifiedText');
-    const diffOutput = document.getElementById('diffOutput');
-    const sideBySideDiff = document.getElementById('sideBySideDiff');
-    const originalDiffContent = document.getElementById('originalDiffContent');
-    const modifiedDiffContent = document.getElementById('modifiedDiffContent');
-    const originalLineNumbers = document.getElementById('originalLineNumbers');
-    const modifiedLineNumbers = document.getElementById('modifiedLineNumbers');
-    const originalDiffLineNumbers = document.getElementById('originalDiffLineNumbers');
-    const modifiedDiffLineNumbers = document.getElementById('modifiedDiffLineNumbers');
-    const unifiedViewBtn = document.getElementById('unifiedViewBtn');
-    const sideBySideViewBtn = document.getElementById('sideBySideViewBtn');
-    const ignoreWhitespace = document.getElementById('ignoreWhitespace');
+    const clearLeftBtn = document.getElementById('clearLeft');
+    const clearRightBtn = document.getElementById('clearRight');
+    const pasteLeftBtn = document.getElementById('pasteLeft');
+    const pasteRightBtn = document.getElementById('pasteRight');
+    const resultsContent = document.getElementById('resultsContent');
     const ignoreCase = document.getElementById('ignoreCase');
-    const showLineNumbers = document.getElementById('showLineNumbers');
-    const loadSampleBtn = document.getElementById('loadSampleBtn');
-    const downloadResultBtn = document.getElementById('downloadResultBtn');
-    const originalFileBtn = document.getElementById('originalFileBtn');
-    const modifiedFileBtn = document.getElementById('modifiedFileBtn');
-    const originalFileInput = document.getElementById('originalFileInput');
-    const modifiedFileInput = document.getElementById('modifiedFileInput');
-    const addedCount = document.getElementById('addedCount');
-    const removedCount = document.getElementById('removedCount');
-    const unchangedCount = document.getElementById('unchangedCount');
+    const ignoreWhitespace = document.getElementById('ignoreWhitespace');
+    const trimLines = document.getElementById('trimLines');
+    const themeToggle = document.querySelector('.theme-toggle');
 
-    // State variables
-    let currentView = 'unified';
-    let lastComparisonResult = null;
+    // Initialize line numbers and stats
+    updateLineNumbers(leftText, leftLineNumbers);
+    updateLineNumbers(rightText, rightLineNumbers);
+    updateStats(leftText, leftStats);
+    updateStats(rightText, rightStats);
 
-    // Event Listeners
+    // Event listeners for text areas
+    leftText.addEventListener('input', function() {
+        updateLineNumbers(leftText, leftLineNumbers);
+        updateStats(leftText, leftStats);
+    });
+
+    rightText.addEventListener('input', function() {
+        updateLineNumbers(rightText, rightLineNumbers);
+        updateStats(rightText, rightStats);
+    });
+
+    leftText.addEventListener('scroll', function() {
+        leftLineNumbers.scrollTop = leftText.scrollTop;
+    });
+
+    rightText.addEventListener('scroll', function() {
+        rightLineNumbers.scrollTop = rightText.scrollTop;
+    });
+
+    // Button event listeners
     compareBtn.addEventListener('click', compareTexts);
-    clearBtn.addEventListener('click', clearAll);
-    unifiedViewBtn.addEventListener('click', () => switchView('unified'));
-    sideBySideViewBtn.addEventListener('click', () => switchView('sideBySide'));
-    showLineNumbers.addEventListener('change', updateLineNumbersVisibility);
-    loadSampleBtn.addEventListener('click', loadSampleText);
-    downloadResultBtn.addEventListener('click', downloadComparisonResult);
-    originalFileBtn.addEventListener('click', () => originalFileInput.click());
-    modifiedFileBtn.addEventListener('click', () => modifiedFileInput.click());
-    originalFileInput.addEventListener('change', (e) => handleFileUpload(e, originalText));
-    modifiedFileInput.addEventListener('change', (e) => handleFileUpload(e, modifiedText));
-
-    // Initialize line numbers
-    originalText.addEventListener('input', () => updateLineNumbers(originalText, originalLineNumbers));
-    modifiedText.addEventListener('input', () => updateLineNumbers(modifiedText, modifiedLineNumbers));
     
-    // Initialize with empty line numbers
-    updateLineNumbers(originalText, originalLineNumbers);
-    updateLineNumbers(modifiedText, modifiedLineNumbers);
+    clearBtn.addEventListener('click', function() {
+        leftText.value = '';
+        rightText.value = '';
+        updateLineNumbers(leftText, leftLineNumbers);
+        updateLineNumbers(rightText, rightLineNumbers);
+        updateStats(leftText, leftStats);
+        updateStats(rightText, rightStats);
+        resetResults();
+    });
 
-    /**
-     * Main comparison function
-     */
-    function compareTexts() {
-        let original = originalText.value;
-        let modified = modifiedText.value;
-        
-        // Apply options
-        if (ignoreWhitespace.checked) {
-            original = original.replace(/\s+/g, ' ').trim();
-            modified = modified.replace(/\s+/g, ' ').trim();
-        }
-        
-        if (ignoreCase.checked) {
-            original = original.toLowerCase();
-            modified = modified.toLowerCase();
-        }
+    clearLeftBtn.addEventListener('click', function() {
+        leftText.value = '';
+        updateLineNumbers(leftText, leftLineNumbers);
+        updateStats(leftText, leftStats);
+    });
 
-        // Create diff using diff_match_patch library
-        const dmp = new diff_match_patch();
-        const diffs = dmp.diff_main(original, modifiedText.value);
-        dmp.diff_cleanupSemantic(diffs);
-        
-        // Store the result for later use (e.g., downloading)
-        lastComparisonResult = diffs;
-        
-        // Update the diff statistics
-        updateDiffStats(diffs);
-        
-        // Render the appropriate view
-        if (currentView === 'unified') {
-            renderUnifiedView(diffs);
+    clearRightBtn.addEventListener('click', function() {
+        rightText.value = '';
+        updateLineNumbers(rightText, rightLineNumbers);
+        updateStats(rightText, rightStats);
+    });
+
+    pasteLeftBtn.addEventListener('click', async function() {
+        try {
+            const text = await navigator.clipboard.readText();
+            leftText.value = text;
+            updateLineNumbers(leftText, leftLineNumbers);
+            updateStats(leftText, leftStats);
+        } catch (err) {
+            alert('Failed to read clipboard. Please check browser permissions.');
+        }
+    });
+
+    pasteRightBtn.addEventListener('click', async function() {
+        try {
+            const text = await navigator.clipboard.readText();
+            rightText.value = text;
+            updateLineNumbers(rightText, rightLineNumbers);
+            updateStats(rightText, rightStats);
+        } catch (err) {
+            alert('Failed to read clipboard. Please check browser permissions.');
+        }
+    });
+
+    // Theme toggle
+    themeToggle.addEventListener('click', function() {
+        document.body.classList.toggle('dark-theme');
+        const icon = themeToggle.querySelector('i');
+        if (document.body.classList.contains('dark-theme')) {
+            icon.classList.remove('fa-moon');
+            icon.classList.add('fa-sun');
         } else {
-            renderSideBySideView(diffs);
+            icon.classList.remove('fa-sun');
+            icon.classList.add('fa-moon');
         }
+    });
+
+    // Check for saved theme preference
+    if (localStorage.getItem('theme') === 'dark') {
+        document.body.classList.add('dark-theme');
+        const icon = themeToggle.querySelector('i');
+        icon.classList.remove('fa-moon');
+        icon.classList.add('fa-sun');
     }
 
-    /**
-     * Render unified diff view
-     */
-    function renderUnifiedView(diffs) {
-        diffOutput.innerHTML = '';
-        
-        diffs.forEach(diff => {
-            const [type, text] = diff;
-            const span = document.createElement('span');
-            span.textContent = text;
-            
-            switch(type) {
-                case 1: // Addition
-                    span.className = 'diff-added';
-                    break;
-                case -1: // Deletion
-                    span.className = 'diff-removed';
-                    break;
-                case 0: // Unchanged
-                    span.className = 'diff-unchanged';
-                    break;
-            }
-            
-            diffOutput.appendChild(span);
-        });
-    }
-
-    /**
-     * Render side-by-side diff view
-     */
-    function renderSideBySideView(diffs) {
-        originalDiffContent.innerHTML = '';
-        modifiedDiffContent.innerHTML = '';
-        originalDiffLineNumbers.innerHTML = '';
-        modifiedDiffLineNumbers.innerHTML = '';
-        
-        let originalLines = [];
-        let modifiedLines = [];
-        
-        let currentOriginalLine = '';
-        let currentModifiedLine = '';
-        
-        // Process diffs into lines
-        diffs.forEach(diff => {
-            const [type, text] = diff;
-            const lines = text.split('\n');
-            
-            for (let i = 0; i < lines.length; i++) {
-                const line = lines[i];
-                const isLastLine = i === lines.length - 1;
-                
-                if (type === -1 || type === 0) { // Deletion or unchanged
-                    currentOriginalLine += line;
-                    if (!isLastLine || line.endsWith('\n')) {
-                        originalLines.push({ text: currentOriginalLine, type });
-                        currentOriginalLine = '';
-                    }
-                }
-                
-                if (type === 1 || type === 0) { // Addition or unchanged
-                    currentModifiedLine += line;
-                    if (!isLastLine || line.endsWith('\n')) {
-                        modifiedLines.push({ text: currentModifiedLine, type });
-                        currentModifiedLine = '';
-                    }
-                }
-                
-                if (!isLastLine) {
-                    if (type === -1 && currentModifiedLine === '') {
-                        modifiedLines.push({ text: '', type: -2 }); // Placeholder for empty line
-                    } else if (type === 1 && currentOriginalLine === '') {
-                        originalLines.push({ text: '', type: -2 }); // Placeholder for empty line
-                    }
-                }
-            }
-        });
-        
-        // Add any remaining content
-        if (currentOriginalLine) {
-            originalLines.push({ text: currentOriginalLine, type: -1 });
-        }
-        if (currentModifiedLine) {
-            modifiedLines.push({ text: currentModifiedLine, type: 1 });
-        }
-        
-        // Ensure both sides have the same number of lines
-        const maxLines = Math.max(originalLines.length, modifiedLines.length);
-        while (originalLines.length < maxLines) originalLines.push({ text: '', type: -2 });
-        while (modifiedLines.length < maxLines) modifiedLines.push({ text: '', type: -2 });
-        
-        // Render lines
-        for (let i = 0; i < maxLines; i++) {
-            const originalLine = originalLines[i];
-            const modifiedLine = modifiedLines[i];
-            
-            // Original side
-            const originalLineEl = document.createElement('div');
-            originalLineEl.textContent = originalLine.text;
-            originalLineEl.className = 'diff-line';
-            
-            if (originalLine.type === -1) {
-                originalLineEl.classList.add('diff-line-removed');
-            } else if (originalLine.type === 0) {
-                originalLineEl.classList.add('diff-line-unchanged');
-            }
-            
-            originalDiffContent.appendChild(originalLineEl);
-            
-            // Modified side
-            const modifiedLineEl = document.createElement('div');
-            modifiedLineEl.textContent = modifiedLine.text;
-            modifiedLineEl.className = 'diff-line';
-            
-            if (modifiedLine.type === 1) {
-                modifiedLineEl.classList.add('diff-line-added');
-            } else if (modifiedLine.type === 0) {
-                modifiedLineEl.classList.add('diff-line-unchanged');
-            }
-            
-            modifiedDiffContent.appendChild(modifiedLineEl);
-            
-            // Line numbers
-            if (showLineNumbers.checked) {
-                const originalLineNum = document.createElement('div');
-                originalLineNum.textContent = originalLine.type !== -2 ? (i + 1) : '';
-                originalLineNum.className = 'line-number';
-                originalDiffLineNumbers.appendChild(originalLineNum);
-                
-                const modifiedLineNum = document.createElement('div');
-                modifiedLineNum.textContent = modifiedLine.type !== -2 ? (i + 1) : '';
-                modifiedLineNum.className = 'line-number';
-                modifiedDiffLineNumbers.appendChild(modifiedLineNum);
-            }
-        }
-    }
-
-    /**
-     * Update diff statistics
-     */
-    function updateDiffStats(diffs) {
-        let added = 0;
-        let removed = 0;
-        let unchanged = 0;
-        
-        diffs.forEach(diff => {
-            const [type, text] = diff;
-            const count = text.length;
-            
-            switch(type) {
-                case 1: // Addition
-                    added += count;
-                    break;
-                case -1: // Deletion
-                    removed += count;
-                    break;
-                case 0: // Unchanged
-                    unchanged += count;
-                    break;
-            }
-        });
-        
-        addedCount.textContent = `${added} additions`;
-        removedCount.textContent = `${removed} deletions`;
-        unchangedCount.textContent = `${unchanged} unchanged`;
-    }
-
-    /**
-     * Switch between unified and side-by-side views
-     */
-    function switchView(view) {
-        currentView = view;
-        
-        if (view === 'unified') {
-            unifiedViewBtn.classList.add('active');
-            sideBySideViewBtn.classList.remove('active');
-            diffOutput.classList.remove('hidden');
-            sideBySideDiff.classList.add('hidden');
-        } else {
-            unifiedViewBtn.classList.remove('active');
-            sideBySideViewBtn.classList.add('active');
-            diffOutput.classList.add('hidden');
-            sideBySideDiff.classList.remove('hidden');
-        }
-        
-        if (lastComparisonResult) {
-            if (view === 'unified') {
-                renderUnifiedView(lastComparisonResult);
-            } else {
-                renderSideBySideView(lastComparisonResult);
-            }
-        }
-    }
-
-    /**
-     * Update line numbers in the editors
-     */
+    // Functions
     function updateLineNumbers(textarea, lineNumbersElement) {
         const lines = textarea.value.split('\n');
-        lineNumbersElement.innerHTML = '';
+        const lineCount = lines.length;
         
-        if (showLineNumbers.checked) {
-            for (let i = 0; i < lines.length; i++) {
-                const lineNumber = document.createElement('div');
-                lineNumber.textContent = i + 1;
-                lineNumber.className = 'line-number';
-                lineNumbersElement.appendChild(lineNumber);
-            }
+        let lineNumbersHTML = '';
+        for (let i = 1; i <= lineCount; i++) {
+            lineNumbersHTML += `<div>${i}</div>`;
         }
         
-        // Sync scroll position
-        textarea.addEventListener('scroll', () => {
-            lineNumbersElement.scrollTop = textarea.scrollTop;
-        });
+        lineNumbersElement.innerHTML = lineNumbersHTML;
     }
 
-    /**
-     * Update line numbers visibility based on checkbox
-     */
-    function updateLineNumbersVisibility() {
-        const lineNumberElements = document.querySelectorAll('.line-numbers');
+    function updateStats(textarea, statsElement) {
+        const text = textarea.value;
+        const lines = text.split('\n').length;
+        const chars = text.length;
         
-        lineNumberElements.forEach(element => {
-            if (showLineNumbers.checked) {
-                element.style.display = 'block';
-                updateLineNumbers(originalText, originalLineNumbers);
-                updateLineNumbers(modifiedText, modifiedLineNumbers);
-                if (lastComparisonResult && currentView === 'sideBySide') {
-                    renderSideBySideView(lastComparisonResult);
+        statsElement.textContent = `Lines: ${lines} | Characters: ${chars}`;
+    }
+
+    function resetResults() {
+        resultsContent.innerHTML = `
+            <div class="placeholder">
+                <i class="fas fa-code-compare fa-3x"></i>
+                <p>Click "Compare" to see the differences between the texts</p>
+            </div>
+        `;
+    }
+
+    function compareTexts() {
+        let leftContent = leftText.value;
+        let rightContent = rightText.value;
+        
+        // Apply options
+        if (ignoreCase.checked) {
+            leftContent = leftContent.toLowerCase();
+            rightContent = rightContent.toLowerCase();
+        }
+        
+        let leftLines = leftContent.split('\n');
+        let rightLines = rightContent.split('\n');
+        
+        if (trimLines.checked) {
+            leftLines = leftLines.map(line => line.trim());
+            rightLines = rightLines.map(line => line.trim());
+        }
+        
+        if (ignoreWhitespace.checked) {
+            leftLines = leftLines.map(line => line.replace(/\s+/g, ' '));
+            rightLines = rightLines.map(line => line.replace(/\s+/g, ' '));
+        }
+        
+        // Use diff library to compute differences
+        const diff = Diff.diffLines(leftLines.join('\n'), rightLines.join('\n'));
+        
+        // Generate HTML for the diff view
+        let diffHTML = '';
+        let leftLineNum = 1;
+        let rightLineNum = 1;
+        
+        diff.forEach(part => {
+            const value = part.value;
+            const lines = value.split('\n');
+            // Remove the last empty line that comes from split
+            if (lines[lines.length - 1] === '') {
+                lines.pop();
+            }
+            
+            lines.forEach(line => {
+                if (part.added) {
+                    diffHTML += `
+                        <div class="diff-line added">
+                            <div class="line-number">-</div>
+                            <div class="line-number">${rightLineNum++}</div>
+                            <div class="line-content">${escapeHTML(line)}</div>
+                        </div>
+                    `;
+                } else if (part.removed) {
+                    diffHTML += `
+                        <div class="diff-line removed">
+                            <div class="line-number">${leftLineNum++}</div>
+                            <div class="line-number">-</div>
+                            <div class="line-content">${escapeHTML(line)}</div>
+                        </div>
+                    `;
+                } else {
+                    diffHTML += `
+                        <div class="diff-line">
+                            <div class="line-number">${leftLineNum++}</div>
+                            <div class="line-number">${rightLineNum++}</div>
+                            <div class="line-content">${escapeHTML(line)}</div>
+                        </div>
+                    `;
                 }
-            } else {
-                element.style.display = 'none';
-            }
+            });
         });
-    }
-
-    /**
-     * Clear all text and results
-     */
-    function clearAll() {
-        originalText.value = '';
-        modifiedText.value = '';
-        diffOutput.innerHTML = '';
-        originalDiffContent.innerHTML = '';
-        modifiedDiffContent.innerHTML = '';
-        originalLineNumbers.innerHTML = '';
-        modifiedLineNumbers.innerHTML = '';
-        originalDiffLineNumbers.innerHTML = '';
-        modifiedDiffLineNumbers.innerHTML = '';
-        addedCount.textContent = '0 additions';
-        removedCount.textContent = '0 deletions';
-        unchangedCount.textContent = '0 unchanged';
-        lastComparisonResult = null;
         
-        // Reset file inputs
-        originalFileInput.value = '';
-        modifiedFileInput.value = '';
-    }
-
-    /**
-     * Handle file uploads
-     */
-    function handleFileUpload(event, targetTextarea) {
-        const file = event.target.files[0];
-        if (!file) return;
-        
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            targetTextarea.value = e.target.result;
-            if (targetTextarea === originalText) {
-                updateLineNumbers(originalText, originalLineNumbers);
-            } else {
-                updateLineNumbers(modifiedText, modifiedLineNumbers);
-            }
-        };
-        reader.readAsText(file);
-    }
-
-    /**
-     * Load sample text for demonstration
-     */
-    function loadSampleText() {
-        originalText.value = `function calculateTotal(items) {
-    let total = 0;
-    for (let i = 0; i < items.length; i++) {
-        total += items[i].price;
-    }
-    return total;
-}`;
-
-        modifiedText.value = `function calculateTotal(items) {
-    // Use reduce for cleaner code
-    return items.reduce((total, item) => {
-        return total + item.price;
-    }, 0);
-}`;
-
-        updateLineNumbers(originalText, originalLineNumbers);
-        updateLineNumbers(modifiedText, modifiedLineNumbers);
-    }
-
-    /**
-     * Download comparison result
-     */
-    function downloadComparisonResult() {
-        if (!lastComparisonResult) {
-            alert('No comparison result to download. Please compare texts first.');
+        // If no differences found
+        if (diffHTML === '') {
+            resultsContent.innerHTML = `
+                <div class="placeholder">
+                    <i class="fas fa-check-circle fa-3x" style="color: var(--added-border);"></i>
+                    <p>No differences found! The texts are identical.</p>
+                </div>
+            `;
             return;
         }
         
-        let content = '';
+        resultsContent.innerHTML = diffHTML;
         
-        if (currentView === 'unified') {
-            content = diffOutput.innerText;
-        } else {
-            // Create a formatted side-by-side view for download
-            const originalLines = originalDiffContent.innerText.split('\n');
-            const modifiedLines = modifiedDiffContent.innerText.split('\n');
-            
-            for (let i = 0; i < Math.max(originalLines.length, modifiedLines.length); i++) {
-                const originalLine = i < originalLines.length ? originalLines[i] : '';
-                const modifiedLine = i < modifiedLines.length ? modifiedLines[i] : '';
-                content += `${originalLine} | ${modifiedLine}\n`;
-            }
-        }
-        
-        const blob = new Blob([content], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'comparison-result.txt';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        // Highlight inline differences for better visibility
+        highlightInlineDifferences();
     }
 
-    // Enable tab key in textareas
-    [originalText, modifiedText].forEach(textarea => {
-        textarea.addEventListener('keydown', (e) => {
-            if (e.key === 'Tab') {
-                e.preventDefault();
-                const start = textarea.selectionStart;
-                const end = textarea.selectionEnd;
-                textarea.value = textarea.value.substring(0, start) + '\t' + 
-                               textarea.value.substring(end);
-                textarea.selectionStart = textarea.selectionEnd = start + 1;
+    function escapeHTML(text) {
+        return text
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function highlightInlineDifferences() {
+        // Get all adjacent added/removed lines
+        const diffLines = document.querySelectorAll('.diff-line');
+        
+        for (let i = 0; i < diffLines.length - 1; i++) {
+            const currentLine = diffLines[i];
+            const nextLine = diffLines[i + 1];
+            
+            if (currentLine.classList.contains('removed') && nextLine.classList.contains('added')) {
+                const removedText = currentLine.querySelector('.line-content').textContent;
+                const addedText = nextLine.querySelector('.line-content').textContent;
+                
+                // Use character-by-character diff for inline highlighting
+                const charDiff = Diff.diffChars(removedText, addedText);
+                
+                let removedHTML = '';
+                let addedHTML = '';
+                
+                charDiff.forEach(part => {
+                    if (part.added) {
+                        addedHTML += `<span class="inline-diff added">${escapeHTML(part.value)}</span>`;
+                    } else if (part.removed) {
+                        removedHTML += `<span class="inline-diff removed">${escapeHTML(part.value)}</span>`;
+                    } else {
+                        removedHTML += escapeHTML(part.value);
+                        addedHTML += escapeHTML(part.value);
+                    }
+                });
+                
+                currentLine.querySelector('.line-content').innerHTML = removedHTML;
+                nextLine.querySelector('.line-content').innerHTML = addedHTML;
+                
+                // Mark these lines as modified for better visual distinction
+                currentLine.classList.add('modified');
+                nextLine.classList.add('modified');
+                
+                // Skip the next line since we've already processed it
+                i++;
+            }
+        }
+    }
+
+    // Handle keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        // Ctrl+Enter to compare
+        if (e.ctrlKey && e.key === 'Enter') {
+            compareTexts();
+            e.preventDefault();
+        }
+        
+        // Ctrl+Shift+C to clear all
+        if (e.ctrlKey && e.shiftKey && e.key === 'C') {
+            clearBtn.click();
+            e.preventDefault();
+        }
+    });
+
+    // Handle drag and drop
+    [leftText, rightText].forEach(textarea => {
+        textarea.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            this.classList.add('dragover');
+        });
+        
+        textarea.addEventListener('dragleave', function() {
+            this.classList.remove('dragover');
+        });
+        
+        textarea.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.classList.remove('dragover');
+            
+            const file = e.dataTransfer.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    this.value = event.target.result;
+                    if (this === leftText) {
+                        updateLineNumbers(leftText, leftLineNumbers);
+                        updateStats(leftText, leftStats);
+                    } else {
+                        updateLineNumbers(rightText, rightLineNumbers);
+                        updateStats(rightText, rightStats);
+                    }
+                };
+                reader.readAsText(file);
             }
         });
     });
+
+    // Add CSS class for drag and drop visual feedback
+    const style = document.createElement('style');
+    style.textContent = `
+        textarea.dragover {
+            border: 2px dashed var(--primary-color) !important;
+            background-color: rgba(74, 108, 247, 0.05) !important;
+        }
+    `;
+    document.head.appendChild(style);
 });
