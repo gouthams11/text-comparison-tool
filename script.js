@@ -17,6 +17,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const ignoreWhitespace = document.getElementById('ignoreWhitespace');
     const trimLines = document.getElementById('trimLines');
     const themeToggle = document.querySelector('.theme-toggle');
+    
+    // Also check for a control button if that's what you're using
+    const controlBtn = document.getElementById('controlBtn');
+    if (controlBtn) {
+        controlBtn.addEventListener('click', compareTexts);
+    }
 
     // Initialize line numbers and stats
     updateLineNumbers(leftText, leftLineNumbers);
@@ -142,6 +148,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function compareTexts() {
+        console.log("Compare function triggered"); // Debug log
         let leftContent = leftText.value;
         let rightContent = rightText.value;
         
@@ -164,66 +171,88 @@ document.addEventListener('DOMContentLoaded', function() {
             rightLines = rightLines.map(line => line.replace(/\s+/g, ' '));
         }
         
-        // Use diff library to compute differences
-        const diff = Diff.diffLines(leftLines.join('\n'), rightLines.join('\n'));
-        
-        // Generate HTML for the diff view
-        let diffHTML = '';
-        let leftLineNum = 1;
-        let rightLineNum = 1;
-        
-        diff.forEach(part => {
-            const value = part.value;
-            const lines = value.split('\n');
-            // Remove the last empty line that comes from split
-            if (lines[lines.length - 1] === '') {
-                lines.pop();
-            }
-            
-            lines.forEach(line => {
-                if (part.added) {
-                    diffHTML += `
-                        <div class="diff-line added">
-                            <div class="line-number">-</div>
-                            <div class="line-number">${rightLineNum++}</div>
-                            <div class="line-content">${escapeHTML(line)}</div>
-                        </div>
-                    `;
-                } else if (part.removed) {
-                    diffHTML += `
-                        <div class="diff-line removed">
-                            <div class="line-number">${leftLineNum++}</div>
-                            <div class="line-number">-</div>
-                            <div class="line-content">${escapeHTML(line)}</div>
-                        </div>
-                    `;
-                } else {
-                    diffHTML += `
-                        <div class="diff-line">
-                            <div class="line-number">${leftLineNum++}</div>
-                            <div class="line-number">${rightLineNum++}</div>
-                            <div class="line-content">${escapeHTML(line)}</div>
-                        </div>
-                    `;
-                }
-            });
-        });
-        
-        // If no differences found
-        if (diffHTML === '') {
+        // Check if diff library is available
+        if (typeof Diff === 'undefined') {
             resultsContent.innerHTML = `
                 <div class="placeholder">
-                    <i class="fas fa-check-circle fa-3x" style="color: var(--added-border);"></i>
-                    <p>No differences found! The texts are identical.</p>
+                    <i class="fas fa-exclamation-circle fa-3x" style="color: #dc3545;"></i>
+                    <p>Error: Diff library not loaded. Please check your internet connection or include the library manually.</p>
                 </div>
             `;
+            console.error("Diff library not loaded");
             return;
         }
         
-        resultsContent.innerHTML = diffHTML;
-        
-        // Highlight inline differences for better visibility
-        highlightInlineDifferences();
+        try {
+            // Use diff library to compute differences
+            const diff = Diff.diffLines(leftLines.join('\n'), rightLines.join('\n'));
+            
+            // Generate HTML for the diff view
+            let diffHTML = '';
+            let leftLineNum = 1;
+            let rightLineNum = 1;
+            
+            diff.forEach(part => {
+                const value = part.value;
+                const lines = value.split('\n');
+                // Remove the last empty line that comes from split
+                if (lines[lines.length - 1] === '') {
+                    lines.pop();
+                }
+                
+                lines.forEach(line => {
+                    if (part.added) {
+                        diffHTML += `
+                            <div class="diff-line added">
+                                <div class="line-number">-</div>
+                                <div class="line-number">${rightLineNum++}</div>
+                                <div class="line-content">${escapeHTML(line)}</div>
+                            </div>
+                        `;
+                    } else if (part.removed) {
+                        diffHTML += `
+                            <div class="diff-line removed">
+                                <div class="line-number">${leftLineNum++}</div>
+                                <div class="line-number">-</div>
+                                <div class="line-content">${escapeHTML(line)}</div>
+                            </div>
+                        `;
+                    } else {
+                        diffHTML += `
+                            <div class="diff-line">
+                                <div class="line-number">${leftLineNum++}</div>
+                                <div class="line-number">${rightLineNum++}</div>
+                                <div class="line-content">${escapeHTML(line)}</div>
+                            </div>
+                        `;
+                    }
+                });
+            });
+            
+            // If no differences found
+            if (diffHTML === '') {
+                resultsContent.innerHTML = `
+                    <div class="placeholder">
+                        <i class="fas fa-check-circle fa-3x" style="color: var(--added-border);"></i>
+                        <p>No differences found! The texts are identical.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            resultsContent.innerHTML = diffHTML;
+            
+            // Highlight inline differences for better visibility
+            highlightInlineDifferences();
+        } catch (error) {
+            console.error("Error during comparison:", error);
+            resultsContent.innerHTML = `
+                <div class="placeholder">
+                    <i class="fas fa-exclamation-circle fa-3x" style="color: #dc3545;"></i>
+                    <p>An error occurred during comparison: ${error.message}</p>
+                </div>
+            `;
+        }
     }
 
     function escapeHTML(text) {

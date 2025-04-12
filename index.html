@@ -6,6 +6,8 @@
     <title>TextCompare - Advanced Text Comparison Tool</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Ensure diff.js is loaded before your script -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/diff/5.1.0/diff.min.js"></script>
 </head>
 <body>
     <header>
@@ -92,7 +94,7 @@
         <p>TextCompare - Advanced Text Comparison Tool</p>
     </footer>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/diff/5.1.0/diff.min.js"></script>
+    <!-- Make sure your script is loaded after diff.js -->
     <script src="script.js"></script>
 </body>
 </html>
