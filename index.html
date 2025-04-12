@@ -3,62 +3,119 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Text Comparison Tool</title>
+    <title>Text Compare Pro</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <header>
-        <h1>Text Comparison Tool</h1>
-        <button id="dark-mode-toggle" aria-label="Toggle dark mode">Toggle Dark Mode</button>
-    </header>
-    <main>
-        <section class="instructions">
-            <h2>Instructions <button id="toggle-instructions" aria-label="Toggle instructions">▼</button></h2>
-            <div id="instructions-content">
-                <p>Paste or upload text into the fields below and click "Compare" to see differences. Use "Real-time Comparison" for instant updates. Navigate differences with the buttons provided.</p>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <i class="fas fa-code-compare"></i>
+                <h1>Text Compare Pro</h1>
             </div>
-        </section>
-        <div class="input-section">
-            <div class="input-group">
-                <label for="original">Original</label>
-                <textarea id="original" rows="10" aria-label="Original text input"></textarea>
-                <div class="controls">
-                    <button class="clear-btn" data-target="original">Clear</button>
-                    <input type="file" id="original-file" aria-label="Upload original file" />
+            <div class="controls">
+                <div class="view-options">
+                    <button id="unifiedViewBtn" class="view-btn active" title="Unified View">
+                        <i class="fas fa-align-justify"></i> Unified
+                    </button>
+                    <button id="sideBySideViewBtn" class="view-btn" title="Side by Side View">
+                        <i class="fas fa-columns"></i> Side by Side
+                    </button>
+                </div>
+                <div class="action-buttons">
+                    <button id="compareBtn" class="primary-btn">
+                        <i class="fas fa-sync-alt"></i> Compare
+                    </button>
+                    <button id="clearBtn">
+                        <i class="fas fa-trash-alt"></i> Clear
+                    </button>
                 </div>
             </div>
-            <div class="input-group">
-                <label for="modified">Modified</label>
-                <textarea id="modified" rows="10" aria-label="Modified text input"></textarea>
-                <div class="controls">
-                    <button class="clear-btn" data-target="modified">Clear</button>
-                    <input type="file" id="modified-file" aria-label="Upload modified file" />
+        </header>
+        
+        <div class="options-panel">
+            <div class="comparison-options">
+                <label>
+                    <input type="checkbox" id="ignoreWhitespace" checked>
+                    Ignore whitespace
+                </label>
+                <label>
+                    <input type="checkbox" id="ignoreCase">
+                    Ignore case
+                </label>
+                <label>
+                    <input type="checkbox" id="showLineNumbers" checked>
+                    Show line numbers
+                </label>
+            </div>
+            <div class="file-operations">
+                <button id="loadSampleBtn" title="Load sample text">
+                    <i class="fas fa-file-alt"></i> Load Sample
+                </button>
+                <button id="downloadResultBtn" title="Download comparison result">
+                    <i class="fas fa-download"></i> Download Result
+                </button>
+            </div>
+        </div>
+        
+        <main class="comparison-container">
+            <div class="text-panel">
+                <div class="panel-header">
+                    <h2>Original Text</h2>
+                    <div class="panel-controls">
+                        <button class="file-upload-btn" id="originalFileBtn" title="Upload file">
+                            <i class="fas fa-file-upload"></i>
+                        </button>
+                        <input type="file" id="originalFileInput" class="file-input" accept=".txt,.md,.html,.css,.js,.json">
+                    </div>
+                </div>
+                <div class="editor-container">
+                    <div id="originalLineNumbers" class="line-numbers"></div>
+                    <textarea id="originalText" placeholder="Paste your original text here or upload a file..."></textarea>
+                </div>
+            </div>
+            
+            <div class="text-panel">
+                <div class="panel-header">
+                    <h2>Modified Text</h2>
+                    <div class="panel-controls">
+                        <button class="file-upload-btn" id="modifiedFileBtn" title="Upload file">
+                            <i class="fas fa-file-upload"></i>
+                        </button>
+                        <input type="file" id="modifiedFileInput" class="file-input" accept=".txt,.md,.html,.css,.js,.json">
+                    </div>
+                </div>
+                <div class="editor-container">
+                    <div id="modifiedLineNumbers" class="line-numbers"></div>
+                    <textarea id="modifiedText" placeholder="Paste your modified text here or upload a file..."></textarea>
+                </div>
+            </div>
+        </main>
+
+        <div class="results-container">
+            <div class="results-header">
+                <h2>Comparison Results</h2>
+                <div class="diff-stats">
+                    <span id="addedCount" class="stat-item added">0 additions</span>
+                    <span id="removedCount" class="stat-item removed">0 deletions</span>
+                    <span id="unchangedCount" class="stat-item unchanged">0 unchanged</span>
+                </div>
+            </div>
+            <div id="diffOutput" class="diff-output"></div>
+            <div id="sideBySideDiff" class="side-by-side-diff hidden">
+                <div class="diff-panel original-diff">
+                    <div id="originalDiffLineNumbers" class="line-numbers"></div>
+                    <div id="originalDiffContent" class="diff-content"></div>
+                </div>
+                <div class="diff-panel modified-diff">
+                    <div id="modifiedDiffLineNumbers" class="line-numbers"></div>
+                    <div id="modifiedDiffContent" class="diff-content"></div>
                 </div>
             </div>
         </div>
-        <div class="options">
-            <button id="compare-btn">Compare</button>
-            <label><input type="checkbox" id="realtime"> Real-time Comparison</label>
-            <label><input type="checkbox" id="ignore-whitespace"> Ignore Whitespace</label>
-            <label><input type="checkbox" id="ignore-case"> Ignore Case</label>
-        </div>
-        <div class="diff-summary" aria-live="polite"></div>
-        <div class="diff-section">
-            <div class="pane original" tabindex="0" aria-label="Original text differences">
-                <h2>Original</h2>
-                <div class="lines"></div>
-            </div>
-            <div class="pane modified" tabindex="0" aria-label="Modified text differences">
-                <h2>Modified</h2>
-                <div class="lines"></div>
-            </div>
-        </div>
-        <div class="navigation">
-            <button id="prev-diff" disabled>Previous Difference</button>
-            <button id="next-diff" disabled>Next Difference</button>
-        </div>
-    </main>
-    <script src="https://cdn.jsdelivr.net/npm/diff@5.1.0/dist/diff.min.js"></script>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/diff-match-patch/20121119/diff_match_patch.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

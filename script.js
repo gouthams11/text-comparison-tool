@@ -1,241 +1,441 @@
 document.addEventListener('DOMContentLoaded', () => {
     // DOM Elements
-    const originalTextArea = document.getElementById('original');
-    const modifiedTextArea = document.getElementById('modified');
-    const compareBtn = document.getElementById('compare-btn');
-    const realtimeCheckbox = document.getElementById('realtime');
-    const ignoreWhitespaceCheckbox = document.getElementById('ignore-whitespace');
-    const ignoreCaseCheckbox = document.getElementById('ignore-case');
-    const originalLinesDiv = document.querySelector('.pane.original .lines');
-    const modifiedLinesDiv = document.querySelector('.pane.modified .lines');
-    const originalPane = document.querySelector('.pane.original');
-    const modifiedPane = document.querySelector('.pane.modified');
-    const clearBtns = document.querySelectorAll('.clear-btn');
-    const originalFileInput = document.getElementById('original-file');
-    const modifiedFileInput = document.getElementById('modified-file');
-    const darkModeToggle = document.getElementById('dark-mode-toggle');
-    const toggleInstructions = document.getElementById('toggle-instructions');
-    const instructionsContent = document.getElementById('instructions-content');
-    const diffSummary = document.querySelector('.diff-summary');
-    const prevDiffBtn = document.getElementById('prev-diff');
-    const nextDiffBtn = document.getElementById('next-diff');
+    const compareBtn = document.getElementById('compareBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const originalText = document.getElementById('originalText');
+    const modifiedText = document.getElementById('modifiedText');
+    const diffOutput = document.getElementById('diffOutput');
+    const sideBySideDiff = document.getElementById('sideBySideDiff');
+    const originalDiffContent = document.getElementById('originalDiffContent');
+    const modifiedDiffContent = document.getElementById('modifiedDiffContent');
+    const originalLineNumbers = document.getElementById('originalLineNumbers');
+    const modifiedLineNumbers = document.getElementById('modifiedLineNumbers');
+    const originalDiffLineNumbers = document.getElementById('originalDiffLineNumbers');
+    const modifiedDiffLineNumbers = document.getElementById('modifiedDiffLineNumbers');
+    const unifiedViewBtn = document.getElementById('unifiedViewBtn');
+    const sideBySideViewBtn = document.getElementById('sideBySideViewBtn');
+    const ignoreWhitespace = document.getElementById('ignoreWhitespace');
+    const ignoreCase = document.getElementById('ignoreCase');
+    const showLineNumbers = document.getElementById('showLineNumbers');
+    const loadSampleBtn = document.getElementById('loadSampleBtn');
+    const downloadResultBtn = document.getElementById('downloadResultBtn');
+    const originalFileBtn = document.getElementById('originalFileBtn');
+    const modifiedFileBtn = document.getElementById('modifiedFileBtn');
+    const originalFileInput = document.getElementById('originalFileInput');
+    const modifiedFileInput = document.getElementById('modifiedFileInput');
+    const addedCount = document.getElementById('addedCount');
+    const removedCount = document.getElementById('removedCount');
+    const unchangedCount = document.getElementById('unchangedCount');
 
-    let differences = []; // Store diff positions for navigation
-
-    // Utility Functions
-    function escapeHtml(text) {
-        return text.replace(/&/g, '&amp;')
-                   .replace(/</g, '&lt;')
-                   .replace(/>/g, '&gt;')
-                   .replace(/"/g, '&quot;')
-                   .replace(/'/g, '&#039;');
-    }
-
-    function preprocessText(text) {
-        if (ignoreWhitespaceCheckbox.checked) {
-            text = text.replace(/\s+/g, ' ').trim();
-        }
-        if (ignoreCaseCheckbox.checked) {
-            text = text.toLowerCase();
-        }
-        return text;
-    }
-
-    // Debounce Function
-    function debounce(func, wait) {
-        let timeout;
-        return function (...args) {
-            clearTimeout(timeout);
-            timeout = setTimeout(() => func.apply(this, args), wait);
-        };
-    }
-
-    // Compare Texts Function
-    function compareTexts() {
-        let text1 = originalTextArea.value;
-        let text2 = modifiedTextArea.value;
-
-        text1 = preprocessText(text1);
-        text2 = preprocessText(text2);
-
-        const originalLines = text1.split('\n');
-        const modifiedLines = text2.split('\n');
-        const diff = Diff.diffArrays(originalLines, modifiedLines);
-        let originalHtml = '';
-        let modifiedHtml = '';
-        let originalLineNum = 1;
-        let modifiedLineNum = 1;
-        let additions = 0;
-        let deletions = 0;
-        let changes = 0;
-        differences = [];
-
-        let i = 0;
-        while (i < diff.length) {
-            const part = diff[i];
-            if (!part.added && !part.removed) {
-                part.value.forEach(line => {
-                    originalHtml += `<div class="line unchanged"><span class="line-number">${originalLineNum}</span>${escapeHtml(line)}</div>`;
-                    modifiedHtml += `<div class="line unchanged"><span class="line-number">${modifiedLineNum}</span>${escapeHtml(line)}</div>`;
-                    originalLineNum++;
-                    modifiedLineNum++;
-                });
-            } else if (part.removed && i + 1 < diff.length && diff[i + 1].added) {
-                const removedLines = part.value;
-                const addedLines = diff[i + 1].value;
-                const minLength = Math.min(removedLines.length, addedLines.length);
-                for (let j = 0; j < minLength; j++) {
-                    const removedLine = removedLines[j];
-                    const addedLine = addedLines[j];
-                    const wordDiff = Diff.diffWords(removedLine, addedLine);
-                    let originalLineHtml = `<span class="line-number">${originalLineNum}</span>`;
-                    let modifiedLineHtml = `<span class="line-number">${modifiedLineNum}</span>`;
-                    wordDiff.forEach(wordPart => {
-                        if (wordPart.added) {
-                            modifiedLineHtml += `<span class="diff added">${escapeHtml(wordPart.value)}</span>`;
-                        } else if (wordPart.removed) {
-                            originalLineHtml += `<span class="diff removed">${escapeHtml(wordPart.value)}</span>`;
-                        } else {
-                            originalLineHtml += escapeHtml(wordPart.value);
-                            modifiedLineHtml += escapeHtml(wordPart.value);
-                        }
-                    });
-                    originalHtml += `<div class="line changed" data-diff-id="${differences.length}">${originalLineHtml}</div>`;
-                    modifiedHtml += `<div class="line changed" data-diff-id="${differences.length}">${modifiedLineHtml}</div>`;
-                    differences.push({ originalLineNum, modifiedLineNum });
-                    originalLineNum++;
-                    modifiedLineNum++;
-                    changes++;
-                }
-                if (removedLines.length > addedLines.length) {
-격격for (let j = minLength; j < removedLines.length; j++) {
-                        originalHtml += `<div class="line deleted" data-diff-id="${differences.length}"><span class="line-number">${originalLineNum}</span>${escapeHtml(removedLines[j])}</div>`;
-                        modifiedHtml += `<div class="line empty"></div>`;
-                        differences.push({ originalLineNum });
-                        originalLineNum++;
-                        deletions++;
-                    }
-                } else if (addedLines.length > removedLines.length) {
-                    for (let j = minLength; j < addedLines.length; j++) {
-                        originalHtml += `<div class="line empty"></div>`;
-                        modifiedHtml += `<div class="line added" data-diff-id="${differences.length}"><span class="line-number">${modifiedLineNum}</span>${escapeHtml(addedLines[j])}</div>`;
-                        differences.push({ modifiedLineNum });
-                        modifiedLineNum++;
-                        additions++;
-                    }
-                }
-                i++;
-            } else if (part.removed) {
-                part.value.forEach(line => {
-                    originalHtml += `<div class="line deleted" data-diff-id="${differences.length}"><span class="line-number">${originalLineNum}</span>${escapeHtml(line)}</div>`;
-                    modifiedHtml += `<div class="line empty"></div>`;
-                    differences.push({ originalLineNum });
-                    originalLineNum++;
-                    deletions++;
-                });
-            } else if (part.added) {
-                part.value.forEach(line => {
-                    originalHtml += `<div class="line empty"></div>`;
-                    modifiedHtml += `<div class="line added" data-diff-id="${differences.length}"><span class="line-number">${modifiedLineNum}</span>${escapeHtml(line)}</div>`;
-                    differences.push({ modifiedLineNum });
-                    modifiedLineNum++;
-                    additions++;
-                });
-            }
-            i++;
-        }
-
-        originalLinesDiv.innerHTML = originalHtml;
-        modifiedLinesDiv.innerHTML = modifiedHtml;
-        diffSummary.textContent = `Differences: ${additions} additions, ${deletions} deletions, ${changes} changes`;
-        updateNavigationButtons();
-    }
-
-    // Synchronized Scrolling
-    function syncScroll(source, target) {
-        target.scrollTop = source.scrollTop;
-    }
-
-    originalPane.addEventListener('scroll', () => syncScroll(originalPane, modifiedPane));
-    modifiedPane.addEventListener('scroll', () => syncScroll(modifiedPane, originalPane));
+    // State variables
+    let currentView = 'unified';
+    let lastComparisonResult = null;
 
     // Event Listeners
-    clearBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            const targetId = btn.getAttribute('data-target');
-            document.getElementById(targetId).value = '';
-            if (realtimeCheckbox.checked) compareTexts();
-        });
-    });
-
-    originalFileInput.addEventListener('change', (event) => {
-        const file = event.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                originalTextArea.value = e.target.result;
-                if (realtimeCheckbox.checked) compareTexts();
-            };
-            reader.readAsText(file);
-        }
-    });
-
-    modifiedFileInput.addEventListener('change', (event) => {
-        const file = event.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                modifiedTextArea.value = e.target.result;
-                if (realtimeCheckbox.checked) compareTexts();
-            };
-            reader.readAsText(file);
-        }
-    });
-
     compareBtn.addEventListener('click', compareTexts);
+    clearBtn.addEventListener('click', clearAll);
+    unifiedViewBtn.addEventListener('click', () => switchView('unified'));
+    sideBySideViewBtn.addEventListener('click', () => switchView('sideBySide'));
+    showLineNumbers.addEventListener('change', updateLineNumbersVisibility);
+    loadSampleBtn.addEventListener('click', loadSampleText);
+    downloadResultBtn.addEventListener('click', downloadComparisonResult);
+    originalFileBtn.addEventListener('click', () => originalFileInput.click());
+    modifiedFileBtn.addEventListener('click', () => modifiedFileInput.click());
+    originalFileInput.addEventListener('change', (e) => handleFileUpload(e, originalText));
+    modifiedFileInput.addEventListener('change', (e) => handleFileUpload(e, modifiedText));
 
-    const debouncedCompare = debounce(compareTexts, 300);
-    originalTextArea.addEventListener('input', () => {
-        if (realtimeCheckbox.checked) debouncedCompare();
-    });
-    modifiedTextArea.addEventListener('input', () => {
-        if (realtimeCheckbox.checked) debouncedCompare();
-    });
-    realtimeCheckbox.addEventListener('change', () => {
-        if (realtimeCheckbox.checked) compareTexts();
-    });
-    ignoreWhitespaceCheckbox.addEventListener('change', compareTexts);
-    ignoreCaseCheckbox.addEventListener('change', compareTexts);
+    // Initialize line numbers
+    originalText.addEventListener('input', () => updateLineNumbers(originalText, originalLineNumbers));
+    modifiedText.addEventListener('input', () => updateLineNumbers(modifiedText, modifiedLineNumbers));
+    
+    // Initialize with empty line numbers
+    updateLineNumbers(originalText, originalLineNumbers);
+    updateLineNumbers(modifiedText, modifiedLineNumbers);
 
-    darkModeToggle.addEventListener('click', () => {
-        document.body.classList.toggle('dark-mode');
-    });
+    /**
+     * Main comparison function
+     */
+    function compareTexts() {
+        let original = originalText.value;
+        let modified = modifiedText.value;
+        
+        // Apply options
+        if (ignoreWhitespace.checked) {
+            original = original.replace(/\s+/g, ' ').trim();
+            modified = modified.replace(/\s+/g, ' ').trim();
+        }
+        
+        if (ignoreCase.checked) {
+            original = original.toLowerCase();
+            modified = modified.toLowerCase();
+        }
 
-    toggleInstructions.addEventListener('click', () => {
-        instructionsContent.classList.toggle('hidden');
-        toggleInstructions.textContent = instructionsContent.classList.contains('hidden') ? '▼' : '▲';
-    });
-
-    // Navigation
-    let currentDiffIndex = -1;
-
-    function updateNavigationButtons() {
-        prevDiffBtn.disabled = differences.length === 0 || currentDiffIndex <= 0;
-        nextDiffBtn.disabled = differences.length === 0 || currentDiffIndex >= differences.length - 1;
+        // Create diff using diff_match_patch library
+        const dmp = new diff_match_patch();
+        const diffs = dmp.diff_main(original, modifiedText.value);
+        dmp.diff_cleanupSemantic(diffs);
+        
+        // Store the result for later use (e.g., downloading)
+        lastComparisonResult = diffs;
+        
+        // Update the diff statistics
+        updateDiffStats(diffs);
+        
+        // Render the appropriate view
+        if (currentView === 'unified') {
+            renderUnifiedView(diffs);
+        } else {
+            renderSideBySideView(diffs);
+        }
     }
 
-    function scrollToDiff(index) {
-        if (index >= 0 && index < differences.length) {
-            const diff = differences[index];
-            const line = diff.originalLineNum ? originalLinesDiv.querySelector(`[data-diff-id="${index}"]`) : modifiedLinesDiv.querySelector(`[data-diff-id="${index}"]`);
-            if (line) {
-                line.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                currentDiffIndex = index;
-                updateNavigationButtons();
+    /**
+     * Render unified diff view
+     */
+    function renderUnifiedView(diffs) {
+        diffOutput.innerHTML = '';
+        
+        diffs.forEach(diff => {
+            const [type, text] = diff;
+            const span = document.createElement('span');
+            span.textContent = text;
+            
+            switch(type) {
+                case 1: // Addition
+                    span.className = 'diff-added';
+                    break;
+                case -1: // Deletion
+                    span.className = 'diff-removed';
+                    break;
+                case 0: // Unchanged
+                    span.className = 'diff-unchanged';
+                    break;
+            }
+            
+            diffOutput.appendChild(span);
+        });
+    }
+
+    /**
+     * Render side-by-side diff view
+     */
+    function renderSideBySideView(diffs) {
+        originalDiffContent.innerHTML = '';
+        modifiedDiffContent.innerHTML = '';
+        originalDiffLineNumbers.innerHTML = '';
+        modifiedDiffLineNumbers.innerHTML = '';
+        
+        let originalLines = [];
+        let modifiedLines = [];
+        
+        let currentOriginalLine = '';
+        let currentModifiedLine = '';
+        
+        // Process diffs into lines
+        diffs.forEach(diff => {
+            const [type, text] = diff;
+            const lines = text.split('\n');
+            
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                const isLastLine = i === lines.length - 1;
+                
+                if (type === -1 || type === 0) { // Deletion or unchanged
+                    currentOriginalLine += line;
+                    if (!isLastLine || line.endsWith('\n')) {
+                        originalLines.push({ text: currentOriginalLine, type });
+                        currentOriginalLine = '';
+                    }
+                }
+                
+                if (type === 1 || type === 0) { // Addition or unchanged
+                    currentModifiedLine += line;
+                    if (!isLastLine || line.endsWith('\n')) {
+                        modifiedLines.push({ text: currentModifiedLine, type });
+                        currentModifiedLine = '';
+                    }
+                }
+                
+                if (!isLastLine) {
+                    if (type === -1 && currentModifiedLine === '') {
+                        modifiedLines.push({ text: '', type: -2 }); // Placeholder for empty line
+                    } else if (type === 1 && currentOriginalLine === '') {
+                        originalLines.push({ text: '', type: -2 }); // Placeholder for empty line
+                    }
+                }
+            }
+        });
+        
+        // Add any remaining content
+        if (currentOriginalLine) {
+            originalLines.push({ text: currentOriginalLine, type: -1 });
+        }
+        if (currentModifiedLine) {
+            modifiedLines.push({ text: currentModifiedLine, type: 1 });
+        }
+        
+        // Ensure both sides have the same number of lines
+        const maxLines = Math.max(originalLines.length, modifiedLines.length);
+        while (originalLines.length < maxLines) originalLines.push({ text: '', type: -2 });
+        while (modifiedLines.length < maxLines) modifiedLines.push({ text: '', type: -2 });
+        
+        // Render lines
+        for (let i = 0; i < maxLines; i++) {
+            const originalLine = originalLines[i];
+            const modifiedLine = modifiedLines[i];
+            
+            // Original side
+            const originalLineEl = document.createElement('div');
+            originalLineEl.textContent = originalLine.text;
+            originalLineEl.className = 'diff-line';
+            
+            if (originalLine.type === -1) {
+                originalLineEl.classList.add('diff-line-removed');
+            } else if (originalLine.type === 0) {
+                originalLineEl.classList.add('diff-line-unchanged');
+            }
+            
+            originalDiffContent.appendChild(originalLineEl);
+            
+            // Modified side
+            const modifiedLineEl = document.createElement('div');
+            modifiedLineEl.textContent = modifiedLine.text;
+            modifiedLineEl.className = 'diff-line';
+            
+            if (modifiedLine.type === 1) {
+                modifiedLineEl.classList.add('diff-line-added');
+            } else if (modifiedLine.type === 0) {
+                modifiedLineEl.classList.add('diff-line-unchanged');
+            }
+            
+            modifiedDiffContent.appendChild(modifiedLineEl);
+            
+            // Line numbers
+            if (showLineNumbers.checked) {
+                const originalLineNum = document.createElement('div');
+                originalLineNum.textContent = originalLine.type !== -2 ? (i + 1) : '';
+                originalLineNum.className = 'line-number';
+                originalDiffLineNumbers.appendChild(originalLineNum);
+                
+                const modifiedLineNum = document.createElement('div');
+                modifiedLineNum.textContent = modifiedLine.type !== -2 ? (i + 1) : '';
+                modifiedLineNum.className = 'line-number';
+                modifiedDiffLineNumbers.appendChild(modifiedLineNum);
             }
         }
     }
 
-    prevDiffBtn.addEventListener('click', () => scrollToDiff(currentDiffIndex - 1));
-    nextDiffBtn.addEventListener('click', () => scrollToDiff(currentDiffIndex + 1));
+    /**
+     * Update diff statistics
+     */
+    function updateDiffStats(diffs) {
+        let added = 0;
+        let removed = 0;
+        let unchanged = 0;
+        
+        diffs.forEach(diff => {
+            const [type, text] = diff;
+            const count = text.length;
+            
+            switch(type) {
+                case 1: // Addition
+                    added += count;
+                    break;
+                case -1: // Deletion
+                    removed += count;
+                    break;
+                case 0: // Unchanged
+                    unchanged += count;
+                    break;
+            }
+        });
+        
+        addedCount.textContent = `${added} additions`;
+        removedCount.textContent = `${removed} deletions`;
+        unchangedCount.textContent = `${unchanged} unchanged`;
+    }
+
+    /**
+     * Switch between unified and side-by-side views
+     */
+    function switchView(view) {
+        currentView = view;
+        
+        if (view === 'unified') {
+            unifiedViewBtn.classList.add('active');
+            sideBySideViewBtn.classList.remove('active');
+            diffOutput.classList.remove('hidden');
+            sideBySideDiff.classList.add('hidden');
+        } else {
+            unifiedViewBtn.classList.remove('active');
+            sideBySideViewBtn.classList.add('active');
+            diffOutput.classList.add('hidden');
+            sideBySideDiff.classList.remove('hidden');
+        }
+        
+        if (lastComparisonResult) {
+            if (view === 'unified') {
+                renderUnifiedView(lastComparisonResult);
+            } else {
+                renderSideBySideView(lastComparisonResult);
+            }
+        }
+    }
+
+    /**
+     * Update line numbers in the editors
+     */
+    function updateLineNumbers(textarea, lineNumbersElement) {
+        const lines = textarea.value.split('\n');
+        lineNumbersElement.innerHTML = '';
+        
+        if (showLineNumbers.checked) {
+            for (let i = 0; i < lines.length; i++) {
+                const lineNumber = document.createElement('div');
+                lineNumber.textContent = i + 1;
+                lineNumber.className = 'line-number';
+                lineNumbersElement.appendChild(lineNumber);
+            }
+        }
+        
+        // Sync scroll position
+        textarea.addEventListener('scroll', () => {
+            lineNumbersElement.scrollTop = textarea.scrollTop;
+        });
+    }
+
+    /**
+     * Update line numbers visibility based on checkbox
+     */
+    function updateLineNumbersVisibility() {
+        const lineNumberElements = document.querySelectorAll('.line-numbers');
+        
+        lineNumberElements.forEach(element => {
+            if (showLineNumbers.checked) {
+                element.style.display = 'block';
+                updateLineNumbers(originalText, originalLineNumbers);
+                updateLineNumbers(modifiedText, modifiedLineNumbers);
+                if (lastComparisonResult && currentView === 'sideBySide') {
+                    renderSideBySideView(lastComparisonResult);
+                }
+            } else {
+                element.style.display = 'none';
+            }
+        });
+    }
+
+    /**
+     * Clear all text and results
+     */
+    function clearAll() {
+        originalText.value = '';
+        modifiedText.value = '';
+        diffOutput.innerHTML = '';
+        originalDiffContent.innerHTML = '';
+        modifiedDiffContent.innerHTML = '';
+        originalLineNumbers.innerHTML = '';
+        modifiedLineNumbers.innerHTML = '';
+        originalDiffLineNumbers.innerHTML = '';
+        modifiedDiffLineNumbers.innerHTML = '';
+        addedCount.textContent = '0 additions';
+        removedCount.textContent = '0 deletions';
+        unchangedCount.textContent = '0 unchanged';
+        lastComparisonResult = null;
+        
+        // Reset file inputs
+        originalFileInput.value = '';
+        modifiedFileInput.value = '';
+    }
+
+    /**
+     * Handle file uploads
+     */
+    function handleFileUpload(event, targetTextarea) {
+        const file = event.target.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            targetTextarea.value = e.target.result;
+            if (targetTextarea === originalText) {
+                updateLineNumbers(originalText, originalLineNumbers);
+            } else {
+                updateLineNumbers(modifiedText, modifiedLineNumbers);
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    /**
+     * Load sample text for demonstration
+     */
+    function loadSampleText() {
+        originalText.value = `function calculateTotal(items) {
+    let total = 0;
+    for (let i = 0; i < items.length; i++) {
+        total += items[i].price;
+    }
+    return total;
+}`;
+
+        modifiedText.value = `function calculateTotal(items) {
+    // Use reduce for cleaner code
+    return items.reduce((total, item) => {
+        return total + item.price;
+    }, 0);
+}`;
+
+        updateLineNumbers(originalText, originalLineNumbers);
+        updateLineNumbers(modifiedText, modifiedLineNumbers);
+    }
+
+    /**
+     * Download comparison result
+     */
+    function downloadComparisonResult() {
+        if (!lastComparisonResult) {
+            alert('No comparison result to download. Please compare texts first.');
+            return;
+        }
+        
+        let content = '';
+        
+        if (currentView === 'unified') {
+            content = diffOutput.innerText;
+        } else {
+            // Create a formatted side-by-side view for download
+            const originalLines = originalDiffContent.innerText.split('\n');
+            const modifiedLines = modifiedDiffContent.innerText.split('\n');
+            
+            for (let i = 0; i < Math.max(originalLines.length, modifiedLines.length); i++) {
+                const originalLine = i < originalLines.length ? originalLines[i] : '';
+                const modifiedLine = i < modifiedLines.length ? modifiedLines[i] : '';
+                content += `${originalLine} | ${modifiedLine}\n`;
+            }
+        }
+        
+        const blob = new Blob([content], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'comparison-result.txt';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    // Enable tab key in textareas
+    [originalText, modifiedText].forEach(textarea => {
+        textarea.addEventListener('keydown', (e) => {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const start = textarea.selectionStart;
+                const end = textarea.selectionEnd;
+                textarea.value = textarea.value.substring(0, start) + '\t' + 
+                               textarea.value.substring(end);
+                textarea.selectionStart = textarea.selectionEnd = start + 1;
+            }
+        });
+    });
 });
