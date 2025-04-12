@@ -192,11 +192,6 @@ document.addEventListener('DOMContentLoaded', function() {
             let leftLineNum = 1;
             let rightLineNum = 1;
             
-            // Track counts for summary
-            let addedLines = 0;
-            let removedLines = 0;
-            let unchangedLines = 0;
-            
             diff.forEach(part => {
                 const value = part.value;
                 const lines = value.split('\n');
@@ -207,7 +202,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 lines.forEach(line => {
                     if (part.added) {
-                        addedLines++;
                         diffHTML += `
                             <div class="diff-line added">
                                 <div class="line-number">-</div>
@@ -216,7 +210,6 @@ document.addEventListener('DOMContentLoaded', function() {
                             </div>
                         `;
                     } else if (part.removed) {
-                        removedLines++;
                         diffHTML += `
                             <div class="diff-line removed">
                                 <div class="line-number">${leftLineNum++}</div>
@@ -225,7 +218,6 @@ document.addEventListener('DOMContentLoaded', function() {
                             </div>
                         `;
                     } else {
-                        unchangedLines++;
                         diffHTML += `
                             <div class="diff-line">
                                 <div class="line-number">${leftLineNum++}</div>
@@ -248,19 +240,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
-            // Add summary at the top
-            const summaryHTML = `
-                <div class="diff-summary">
-                    <div class="summary-item"><span class="color-box added"></span> ${addedLines} lines added</div>
-                    <div class="summary-item"><span class="color-box removed"></span> ${removedLines} lines removed</div>
-                    <div class="summary-item"><span class="color-box"></span> ${unchangedLines} lines unchanged</div>
-                </div>
-            `;
-            
-            resultsContent.innerHTML = summaryHTML + diffHTML;
-            
-            // Make results container focusable for keyboard navigation
-            resultsContent.setAttribute('tabindex', '0');
+            resultsContent.innerHTML = diffHTML;
             
             // Highlight inline differences for better visibility
             highlightInlineDifferences();
@@ -325,60 +305,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     }
-    
-    // Add keyboard navigation for results
-    resultsContent.addEventListener('keydown', function(e) {
-        if (e.key === 'ArrowDown') {
-            navigateToNextDifference();
-            e.preventDefault();
-        } else if (e.key === 'ArrowUp') {
-            navigateToPreviousDifference();
-            e.preventDefault();
-        }
-    });
-    
-    // Navigation functions
-    function navigateToNextDifference() {
-        const diffLines = document.querySelectorAll('.diff-line.added, .diff-line.removed');
-        if (diffLines.length === 0) return;
-        
-        let currentFocus = -1;
-        
-        // Find the currently visible difference
-        for (let i = 0; i < diffLines.length; i++) {
-            const rect = diffLines[i].getBoundingClientRect();
-            if (rect.top > 0) {
-                currentFocus = i;
-                break;
-            }
-        }
-        
-        // Move to the next difference
-        if (currentFocus < diffLines.length - 1) {
-            diffLines[currentFocus + 1].scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-    }
-    
-    function navigateToPreviousDifference() {
-        const diffLines = document.querySelectorAll('.diff-line.added, .diff-line.removed');
-        if (diffLines.length === 0) return;
-        
-        let currentFocus = diffLines.length;
-        
-        // Find the currently visible difference
-        for (let i = diffLines.length - 1; i >= 0; i--) {
-            const rect = diffLines[i].getBoundingClientRect();
-            if (rect.top < window.innerHeight) {
-                currentFocus = i;
-                break;
-            }
-        }
-        
-        // Move to the previous difference
-        if (currentFocus > 0) {
-            diffLines[currentFocus - 1].scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-    }
 
     // Handle keyboard shortcuts
     document.addEventListener('keydown', function(e) {
@@ -434,22 +360,6 @@ document.addEventListener('DOMContentLoaded', function() {
         textarea.dragover {
             border: 2px dashed var(--primary-color) !important;
             background-color: rgba(74, 108, 247, 0.05) !important;
-        }
-        
-        .diff-summary {
-            display: flex;
-            gap: 1.5rem;
-            padding: 0.75rem 1rem;
-            background-color: var(--panel-bg);
-            border-radius: 6px;
-            margin-bottom: 1rem;
-        }
-        
-        .summary-item {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 0.9rem;
         }
     `;
     document.head.appendChild(style);
