@@ -363,6 +363,11 @@ textarea:focus {
     text-decoration-color: #9e2828;
 }
 
+.diff-line:hover {
+    background-color: rgba(var(--primary-color-rgb), 0.1);
+    cursor: pointer;
+}
+
 footer {
     text-align: center;
     padding: 1rem;

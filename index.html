@@ -18,25 +18,35 @@
         <div class="theme-toggle">
             <i class="fas fa-moon"></i>
         </div>
+        <!-- Add next to theme toggle -->
+        <div class="accessibility-toggle" title="High Contrast Mode">
+            <i class="fas fa-universal-access"></i>
+        </div>
     </header>
 
     <main>
         <div class="toolbar">
             <button id="clearBtn" class="btn"><i class="fas fa-trash-alt"></i> Clear All</button>
             <button id="compareBtn" class="btn primary"><i class="fas fa-play"></i> Compare</button>
+            <!-- Add to the options div in the toolbar -->
             <div class="options">
+                <!-- Existing options -->
                 <label>
-                    <input type="checkbox" id="ignoreCase" checked>
-                    Ignore Case
+                    <input type="checkbox" id="syncScroll" checked>
+                    Sync Scroll
                 </label>
+                <!-- Add to the options div -->
                 <label>
-                    <input type="checkbox" id="ignoreWhitespace">
-                    Ignore Whitespace
+                    <input type="checkbox" id="wordWrap" checked>
+                    Word Wrap
                 </label>
-                <label>
-                    <input type="checkbox" id="trimLines" checked>
-                    Trim Lines
-                </label>
+                <!-- Add to options -->
+                <select id="lineNumberingStyle" class="select-dropdown">
+                    <option value="both">Both Sides</option>
+                    <option value="left">Left Only</option>
+                    <option value="right">Right Only</option>
+                    <option value="none">No Line Numbers</option>
+                </select>
             </div>
         </div>
 
@@ -45,8 +55,12 @@
                 <div class="panel-header">
                     <h3>Original Text</h3>
                     <div class="panel-actions">
-                        <button class="btn small" id="pasteLeft"><i class="fas fa-paste"></i> Paste</button>
-                        <button class="btn small" id="clearLeft"><i class="fas fa-times"></i></button>
+                        <!-- After the paste button in each panel -->
+                        <div class="panel-actions">
+                            <button class="btn small" id="pasteLeft"><i class="fas fa-paste"></i> Paste</button>
+                            <button class="btn small" id="uploadLeft"><i class="fas fa-file-upload"></i></button>
+                            <button class="btn small" id="clearLeft"><i class="fas fa-times"></i></button>
+                        </div>
                     </div>
                 </div>
                 <div class="editor-container">
@@ -73,13 +87,14 @@
         </div>
 
         <div class="results-container">
+            <!-- Add to the results header -->
             <div class="results-header">
                 <h3>Comparison Results</h3>
-                <div class="legend">
-                    <span class="legend-item"><span class="color-box added"></span> Added</span>
-                    <span class="legend-item"><span class="color-box removed"></span> Removed</span>
-                    <span class="legend-item"><span class="color-box modified"></span> Modified</span>
+                <div class="export-options">
+                    <button class="btn small" id="exportHTML"><i class="fas fa-file-export"></i> HTML</button>
+                    <button class="btn small" id="exportPDF"><i class="fas fa-file-pdf"></i> PDF</button>
                 </div>
+                <!-- Existing legend -->
             </div>
             <div class="results-content" id="resultsContent">
                 <div class="placeholder">
@@ -96,5 +111,17 @@
 
     <!-- Make sure your script is loaded after diff.js -->
     <script src="script.js"></script>
+    <!-- Add below the toolbar -->
+    <div class="search-bar">
+        <input type="text" id="searchInput" placeholder="Search in comparison...">
+        <button class="btn small" id="searchPrev"><i class="fas fa-chevron-up"></i></button>
+        <button class="btn small" id="searchNext"><i class="fas fa-chevron-down"></i></button>
+        <span id="searchResults">0/0</span>
+    </div>
 </body>
 </html>
+
+<!-- Update the diff-line divs in the script.js -->
+<div class="diff-line added" role="row" aria-label="Added line: ${line}">
+    <!-- Content -->
+</div>
